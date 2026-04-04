@@ -6,7 +6,14 @@ import dynamic from "next/dynamic";
 import { miniCities, MiniCity } from "@/data/cities";
 import Popup from "@/components/Popup";
 
-const Map = dynamic(() => import("@/components/Map"), { ssr: false });
+const Map = dynamic(() => import("@/components/Map"), {
+  ssr: false,
+  loading: () => (
+    <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+      <p className="text-gray-400 text-sm">Loading map...</p>
+    </div>
+  ),
+});
 
 function MapPage() {
   const searchParams = useSearchParams();

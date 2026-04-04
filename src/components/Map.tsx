@@ -5,34 +5,34 @@ import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { miniCities, MiniCity } from "@/data/cities";
 
+// Inline style as primary — no external style.json fetch needed.
+// Uses CARTO Positron raster tiles (free, no API key, CORS-friendly).
 const MAP_STYLE: maplibregl.StyleSpecification = {
   version: 8,
   name: "Mini Cities",
   sources: {
-    osm: {
+    carto: {
       type: "raster",
-      tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+      tiles: [
+        "https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
+        "https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
+        "https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
+      ],
       tileSize: 256,
       attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
+      maxzoom: 20,
     },
   },
   layers: [
     {
-      id: "osm-tiles",
+      id: "carto-tiles",
       type: "raster",
-      source: "osm",
+      source: "carto",
       minzoom: 0,
-      maxzoom: 19,
-      paint: {
-        "raster-saturation": -0.3,
-        "raster-brightness-min": 0.1,
-        "raster-brightness-max": 0.95,
-        "raster-contrast": -0.1,
-      },
+      maxzoom: 20,
     },
   ],
-  glyphs: "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
 };
 
 interface MapProps {
@@ -43,7 +43,9 @@ interface MapProps {
 export default function Map({ selectedCity, onSelectCity }: MapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
-  const markersRef = useRef<globalThis.Map<string, HTMLDivElement>>(new globalThis.Map());
+  const markersRef = useRef<globalThis.Map<string, HTMLDivElement>>(
+    new globalThis.Map()
+  );
 
   const onSelectCityRef = useRef(onSelectCity);
   onSelectCityRef.current = onSelectCity;
@@ -55,6 +57,33 @@ export default function Map({ selectedCity, onSelectCity }: MapProps) {
       } else {
         el.classList.remove("marker-active");
       }
+    });
+  }, []);
+
+  const addMarkers = useCallback((map: maplibregl.Map) => {
+    miniCities.forEach((city) => {
+      const el = document.createElement("div");
+      el.className = "city-marker";
+      el.title = city.name;
+
+      const dot = document.createElement("div");
+      dot.className = "city-marker-dot";
+      el.appendChild(dot);
+
+      const pulse = document.createElement("div");
+      pulse.className = "city-marker-pulse";
+      el.appendChild(pulse);
+
+      el.addEventListener("click", (e) => {
+        e.stopPropagation();
+        onSelectCityRef.current(city);
+      });
+
+      markersRef.current.set(city.id, el);
+
+      new maplibregl.Marker({ element: el })
+        .setLngLat(city.coordinates)
+        .addTo(map);
     });
   }, []);
 
@@ -71,35 +100,15 @@ export default function Map({ selectedCity, onSelectCity }: MapProps) {
     });
 
     map.addControl(new maplibregl.NavigationControl(), "bottom-right");
-
     mapRef.current = map;
 
-    map.on("load", () => {
-      miniCities.forEach((city) => {
-        const el = document.createElement("div");
-        el.className = "city-marker";
-        el.title = city.name;
+    // Add markers once map is ready
+    map.on("load", () => addMarkers(map));
 
-        const dot = document.createElement("div");
-        dot.className = "city-marker-dot";
-        el.appendChild(dot);
-
-        const pulse = document.createElement("div");
-        pulse.className = "city-marker-pulse";
-        el.appendChild(pulse);
-
-        el.addEventListener("click", (e) => {
-          e.stopPropagation();
-          onSelectCityRef.current(city);
-        });
-
-        markersRef.current.set(city.id, el);
-
-        new maplibregl.Marker({ element: el })
-          .setLngLat(city.coordinates)
-          .addTo(map);
-      });
-    });
+    // Also try on style load in case "load" already fired
+    if (map.isStyleLoaded()) {
+      addMarkers(map);
+    }
 
     map.on("click", () => {
       onSelectCityRef.current(null);
@@ -108,7 +117,7 @@ export default function Map({ selectedCity, onSelectCity }: MapProps) {
     return () => {
       map.remove();
     };
-  }, []);
+  }, [addMarkers]);
 
   useEffect(() => {
     updateMarkers(selectedCity?.id ?? null);
