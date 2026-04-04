@@ -65,14 +65,6 @@ export default function Map({ selectedCity, onSelectCity }: MapProps) {
       el.className = "city-marker";
       el.title = city.name;
 
-      const dot = document.createElement("div");
-      dot.className = "city-marker-dot";
-      el.appendChild(dot);
-
-      const pulse = document.createElement("div");
-      pulse.className = "city-marker-pulse";
-      el.appendChild(pulse);
-
       el.addEventListener("click", (e) => {
         e.stopPropagation();
         onSelectCityRef.current(city);
@@ -80,7 +72,7 @@ export default function Map({ selectedCity, onSelectCity }: MapProps) {
 
       markersRef.current.set(city.id, el);
 
-      new maplibregl.Marker({ element: el })
+      new maplibregl.Marker({ element: el, anchor: "center" })
         .setLngLat(city.coordinates)
         .addTo(map);
     });

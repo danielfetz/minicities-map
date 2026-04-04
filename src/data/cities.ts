@@ -79,37 +79,4 @@ export const miniCities: MiniCity[] = [
       "Children's city program with international volunteer involvement as part of European Solidarity Corps exchanges.",
     ageRange: "7–14",
   },
-  {
-    id: "minipolisz",
-    name: "MiniPolisz",
-    city: "Budapest",
-    country: "Hungary",
-    coordinates: [19.0402, 47.4979],
-    website: "https://www.facebook.com/MiniPolisz",
-    description:
-      "Interactive family playhouse with themed areas including supermarket, dentist, pizza restaurant, florist, tram, and hotel.",
-    ageRange: "3–12",
-  },
-  {
-    id: "minipolis-zagreb",
-    name: "MiniPolis",
-    city: "Zagreb",
-    country: "Croatia",
-    coordinates: [15.9819, 45.815],
-    website: "https://minipolis.hr",
-    description:
-      "First interactive themed kids park in Croatia with over 50 themed houses simulating a miniature city across 2,000 m².",
-    ageRange: "2–12",
-  },
-  {
-    id: "minipolis-doha",
-    name: "Minipolis",
-    city: "Doha",
-    country: "Qatar",
-    coordinates: [51.531, 25.2854],
-    website: "https://www.facebook.com/MinipolisEntertainment",
-    description:
-      "Interactive city of fun and entertainment for young children in Doha.",
-    ageRange: "2–10",
-  },
 ];
