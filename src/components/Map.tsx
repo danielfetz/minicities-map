@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useCallback } from "react";
 import maplibregl from "maplibre-gl";
-import "maplibre-gl/dist/maplibre-gl.css";
 import { miniCities, MiniCity } from "@/data/cities";
 
 // Inline style as primary — no external style.json fetch needed.
@@ -131,5 +130,11 @@ export default function Map({ selectedCity, onSelectCity }: MapProps) {
     }
   }, [selectedCity, updateMarkers]);
 
-  return <div ref={mapContainer} className="absolute inset-0" />;
+  return (
+    <div
+      ref={mapContainer}
+      className="absolute inset-0"
+      style={{ width: "100%", height: "100%" }}
+    />
+  );
 }
