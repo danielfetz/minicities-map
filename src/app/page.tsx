@@ -55,14 +55,7 @@ function MapPage() {
         </div>
       </div>
 
-      {/* City count badge */}
-      <div className="absolute bottom-4 left-4 z-10 pointer-events-none">
-        <span className="inline-block bg-white/80 backdrop-blur-sm rounded-full px-3 py-1 text-xs text-gray-600 shadow">
-          {miniCities.length} cities
-        </span>
-      </div>
-
-      {/* Detail popup */}
+      {/* Detail panel */}
       {selectedCity && (
         <Popup city={selectedCity} onClose={() => handleSelectCity(null)} />
       )}

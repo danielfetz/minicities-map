@@ -12,7 +12,7 @@ const citiesGeoJSON: GeoJSON.FeatureCollection = {
   type: "FeatureCollection",
   features: miniCities.map((city) => ({
     type: "Feature",
-    properties: { cityId: city.id },
+    properties: { cityId: city.id, name: city.name },
     geometry: {
       type: "Point",
       coordinates: city.coordinates,
@@ -34,6 +34,8 @@ export default function Map({ selectedCity, onSelectCity }: MapProps) {
 
   const selectedCityRef = useRef(selectedCity);
   selectedCityRef.current = selectedCity;
+
+  const hoveredCityRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!mapContainer.current) return;
@@ -135,9 +137,32 @@ export default function Map({ selectedCity, onSelectCity }: MapProps) {
         },
       });
 
+      // Name labels — shown on hover or when selected
+      map.addLayer({
+        id: "cities-labels",
+        type: "symbol",
+        source: "cities",
+        layout: {
+          "text-field": ["get", "name"],
+          "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
+          "text-size": 13,
+          "text-offset": [0, 1.8],
+          "text-anchor": "top",
+          "text-allow-overlap": true,
+        },
+        paint: {
+          "text-color": "#1a1a1a",
+          "text-halo-color": "#ffffff",
+          "text-halo-width": 2,
+        },
+        // Initially filter to nothing — will update on hover/select
+        filter: ["in", ["get", "cityId"], ["literal", []]],
+      });
+
       // Apply selected state if one was set before map loaded
       if (selectedCityRef.current) {
         updateActiveFilter(map, selectedCityRef.current.id);
+        updateLabelFilter(map, selectedCityRef.current.id, null);
       }
     });
 
@@ -150,7 +175,6 @@ export default function Map({ selectedCity, onSelectCity }: MapProps) {
       }
     });
 
-    // Also capture clicks on the border layer
     map.on("click", "cities-border", (e) => {
       if (e.features && e.features.length > 0) {
         const cityId = e.features[0].properties?.cityId;
@@ -169,12 +193,28 @@ export default function Map({ selectedCity, onSelectCity }: MapProps) {
       }
     });
 
-    // Pointer cursor on hover
-    map.on("mouseenter", "cities-fill", () => {
+    // Hover: show label + pointer cursor
+    map.on("mouseenter", "cities-fill", (e) => {
       map.getCanvas().style.cursor = "pointer";
+      if (e.features && e.features.length > 0) {
+        const cityId = e.features[0].properties?.cityId;
+        hoveredCityRef.current = cityId;
+        updateLabelFilter(
+          map,
+          selectedCityRef.current?.id ?? null,
+          cityId
+        );
+      }
     });
+
     map.on("mouseleave", "cities-fill", () => {
       map.getCanvas().style.cursor = "";
+      hoveredCityRef.current = null;
+      updateLabelFilter(
+        map,
+        selectedCityRef.current?.id ?? null,
+        null
+      );
     });
 
     return () => {
@@ -189,6 +229,7 @@ export default function Map({ selectedCity, onSelectCity }: MapProps) {
 
     const activeId = selectedCity?.id ?? "";
     updateActiveFilter(map, activeId);
+    updateLabelFilter(map, selectedCity?.id ?? null, hoveredCityRef.current);
 
     if (selectedCity) {
       map.flyTo({
@@ -217,4 +258,24 @@ function updateActiveFilter(map: maplibregl.Map, cityId: string) {
   map.setFilter("cities-active-glow", filter);
   map.setFilter("cities-active-border", filter);
   map.setFilter("cities-active-fill", filter);
+}
+
+function updateLabelFilter(
+  map: maplibregl.Map,
+  selectedId: string | null,
+  hoveredId: string | null
+) {
+  const ids: string[] = [];
+  if (selectedId) ids.push(selectedId);
+  if (hoveredId && hoveredId !== selectedId) ids.push(hoveredId);
+
+  if (ids.length === 0) {
+    map.setFilter("cities-labels", ["in", ["get", "cityId"], ["literal", []]]);
+  } else {
+    map.setFilter("cities-labels", [
+      "in",
+      ["get", "cityId"],
+      ["literal", ids],
+    ]);
+  }
 }
