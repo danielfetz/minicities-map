@@ -4,33 +4,9 @@ import { useEffect, useRef } from "react";
 import maplibregl from "maplibre-gl";
 import { miniCities, MiniCity } from "@/data/cities";
 
-const MAP_STYLE: maplibregl.StyleSpecification = {
-  version: 8,
-  name: "Mini Cities",
-  sources: {
-    carto: {
-      type: "raster",
-      tiles: [
-        "https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
-        "https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
-        "https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
-      ],
-      tileSize: 256,
-      attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
-      maxzoom: 20,
-    },
-  },
-  layers: [
-    {
-      id: "carto-tiles",
-      type: "raster",
-      source: "carto",
-      minzoom: 0,
-      maxzoom: 20,
-    },
-  ],
-};
+// CARTO Positron vector style — allows us to control label language
+const MAP_STYLE =
+  "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
 
 const citiesGeoJSON: GeoJSON.FeatureCollection = {
   type: "FeatureCollection",
@@ -75,6 +51,21 @@ export default function Map({ selectedCity, onSelectCity }: MapProps) {
     mapRef.current = map;
 
     map.on("load", () => {
+      // Rewrite all labels to English
+      map.getStyle().layers.forEach((layer) => {
+        if (
+          layer.type === "symbol" &&
+          layer.layout &&
+          "text-field" in layer.layout
+        ) {
+          map.setLayoutProperty(layer.id, "text-field", [
+            "coalesce",
+            ["get", "name:en"],
+            ["get", "name"],
+          ]);
+        }
+      });
+
       // Add GeoJSON source with all cities
       map.addSource("cities", {
         type: "geojson",
